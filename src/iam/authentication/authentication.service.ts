@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/require-await */
 import { Injectable } from '@nestjs/common';
-import { AuthDto } from './Dtos/auth.dto';
+import { AuthDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthenticationService {
@@ -10,5 +10,8 @@ export class AuthenticationService {
 
   async signIn(authDto: AuthDto) {
     return { message: 'User signed in successfully', email: authDto.email };
+  }
+  async signOut() {
+    return { message: 'User signed out successfully' };
   }
 }

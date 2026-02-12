@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
-import { AuthDto } from './Dtos/auth.dto';
+import { AuthDto } from './dto/auth.dto';
 
 @Controller('authentication')
 export class AuthenticationController {
@@ -18,5 +18,11 @@ export class AuthenticationController {
   @HttpCode(HttpStatus.OK)
   signIn(@Body() authDto: AuthDto) {
     return this.authService.signIn(authDto);
+  }
+
+  @Post('sign-out')
+  @HttpCode(HttpStatus.OK)
+  signOut() {
+    return this.authService.signOut();
   }
 }
