@@ -10,6 +10,8 @@ import {
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { Role } from 'src/users/enums/role.enum';
+import { Roles } from 'src/iam/authorization/decorators/roles.decorator';
 
 @Controller('products')
 export class ProductsController {
@@ -24,6 +26,7 @@ export class ProductsController {
     return this.productsService.findAll();
   }
 
+  @Roles([Role.Admin])
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(+id);

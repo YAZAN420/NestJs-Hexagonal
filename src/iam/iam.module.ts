@@ -8,6 +8,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './authentication/strategies/jwt.strategy';
 import { APP_GUARD } from '@nestjs/core';
 import { AccessTokenGuard } from './authentication/guards/access-token.guard';
+import { RolesGuard } from './authorization/guards/roles.guard';
 
 @Module({
   imports: [
@@ -28,7 +29,14 @@ import { AccessTokenGuard } from './authentication/guards/access-token.guard';
     HashingModule,
     forwardRef(() => AuthenticationModule),
   ],
-  providers: [JwtStrategy, { provide: APP_GUARD, useClass: AccessTokenGuard }],
+  providers: [
+    JwtStrategy,
+    { provide: APP_GUARD, useClass: AccessTokenGuard },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
   exports: [ConfigModule, JwtModule, HashingModule, AuthenticationModule],
 })
 export class IamModule {}

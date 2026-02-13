@@ -73,7 +73,7 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto | Partial<User>) {
     const updatedUser = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
       .exec();
@@ -90,5 +90,16 @@ export class UsersService {
       throw new NotFoundException('Cannot delete: User not found');
     }
     return { message: 'User deleted successfully' };
+  }
+  async findOneWithRefreshToken(id: string) {
+    const user = await this.userModel
+      .findById(id)
+      .select('+refreshToken')
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
   }
 }

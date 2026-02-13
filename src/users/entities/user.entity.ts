@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Expose, Transform } from 'class-transformer';
+import { Role } from '../enums/role.enum';
 
 export class UserEntity {
   @Expose()
@@ -15,4 +16,6 @@ export class UserEntity {
   createdAt: Date;
   @Expose()
   updatedAt: Date;
+  @Expose()
+  role: Role;
 }
