@@ -51,7 +51,7 @@ export class AuthenticationService {
   }
   async signOut() {
     const id: string = this.cls.get<ActiveUserData>('User').id;
-    await this.userService.update(id, { refreshToken: undefined } as any);
+    await this.userService.updateRefreshToken(id, null);
     return { message: 'User signed out successfully' };
   }
 
@@ -98,9 +98,10 @@ export class AuthenticationService {
 
     const hashedRefreshToken = await this.hashService.hash(refreshToken);
 
-    await this.userService.update(user._id.toString(), {
-      refreshToken: hashedRefreshToken,
-    });
+    await this.userService.updateRefreshToken(
+      user._id.toString(),
+      hashedRefreshToken,
+    );
 
     return {
       accessToken,

@@ -8,6 +8,7 @@ import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 import { validate } from './config/env.validation';
 import { ClsModule } from 'nestjs-cls';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -19,6 +20,12 @@ import { ClsModule } from 'nestjs-cls';
       load: [appConfig, databaseConfig],
       validate: validate,
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     MongooseModule.forRootAsync({
       useFactory: (
         databaseConfiguration: ConfigType<typeof databaseConfig>,

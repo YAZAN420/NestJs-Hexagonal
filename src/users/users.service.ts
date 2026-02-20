@@ -11,13 +11,18 @@ import { HashingService } from 'src/iam/hashing/hashing.service';
 import { plainToInstance } from 'class-transformer';
 import { User } from './schemas/user.schema';
 import { UserEntity } from './entities/user.entity';
+import { BaseService } from 'src/common/services/base.service';
+import { CaslAbilityFactory } from 'src/iam/authorization/casl/casl-ability.factory';
 
 @Injectable()
-export class UsersService {
+export class UsersService extends BaseService<User> {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
+    protected readonly abilityFactory: CaslAbilityFactory,
     private readonly hashService: HashingService,
-  ) {}
+  ) {
+    super(userModel, abilityFactory, User);
+  }
 
   async create(createUserDto: CreateUserDto) {
     const exists = await this.userModel
@@ -51,17 +56,10 @@ export class UsersService {
     });
   }
 
-  async findAll() {
-    return await this.userModel.find().lean().exec();
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    return super.update(id, updateUserDto);
   }
 
-  async findOne(id: string) {
-    const user = await this.userModel.findById(id).exec();
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    return user;
-  }
   async findOneEmail(email: string) {
     const user = await this.userModel
       .findOne({ email })
@@ -73,24 +71,6 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto | Partial<User>) {
-    const updatedUser = await this.userModel
-      .findByIdAndUpdate(id, updateUserDto, { new: true })
-      .exec();
-
-    if (!updatedUser) {
-      throw new NotFoundException('Cannot update: User not found');
-    }
-    return updatedUser;
-  }
-
-  async remove(id: string) {
-    const result = await this.userModel.findByIdAndDelete(id).exec();
-    if (!result) {
-      throw new NotFoundException('Cannot delete: User not found');
-    }
-    return { message: 'User deleted successfully' };
-  }
   async findOneWithRefreshToken(id: string) {
     const user = await this.userModel
       .findById(id)
@@ -101,5 +81,9 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     return user;
+  }
+
+  async updateRefreshToken(id: string, refreshToken: string | null) {
+    await this.userModel.findByIdAndUpdate(id, { refreshToken }).exec();
   }
 }
