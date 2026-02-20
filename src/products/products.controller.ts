@@ -36,7 +36,7 @@ export class ProductsController {
   @Roles([Role.Admin])
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.productsService.findOne(+id);
+    return this.productsService.findOne(id);
   }
 
   @Patch(':id')
