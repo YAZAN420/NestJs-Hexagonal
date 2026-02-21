@@ -95,16 +95,19 @@ export class AuthenticationController {
     return this.authService.turnOnTwoFactorAuthentication(user.id, tfaCode);
   }
 
+  @Public()
   @Get('verify-email')
   async verifyEmail(@Query('token') token: string) {
     return this.authService.verifyEmail(token);
   }
 
+  @Public()
   @Post('forgot-password')
   async forgotPassword(@Body('email') email: string) {
     return this.authService.forgotPassword(email);
   }
 
+  @Public()
   @Post('reset-password')
   async resetPassword(
     @Query('token') token: string,
