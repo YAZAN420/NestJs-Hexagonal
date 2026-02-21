@@ -4,9 +4,15 @@ import { AuthenticationService } from './authentication.service';
 import { UsersModule } from 'src/users/users.module';
 import { HashingModule } from '../hashing/hashing.module';
 import { IamModule } from '../iam.module';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
-  imports: [UsersModule, HashingModule, forwardRef(() => IamModule)],
+  imports: [
+    UsersModule,
+    HashingModule,
+    MailModule,
+    forwardRef(() => IamModule),
+  ],
   controllers: [AuthenticationController],
   providers: [AuthenticationService],
 })

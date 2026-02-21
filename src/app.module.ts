@@ -9,6 +9,7 @@ import appConfig from './config/app.config';
 import { validate } from './config/env.validation';
 import { ClsModule } from 'nestjs-cls';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
       global: true,
       middleware: { mount: true },
     }),
+    MailModule,
   ],
   controllers: [],
   providers: [],

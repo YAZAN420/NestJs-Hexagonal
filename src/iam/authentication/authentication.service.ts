@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -19,6 +20,8 @@ import { plainToInstance } from 'class-transformer';
 import { ClsService } from 'nestjs-cls';
 import { OTP } from 'otplib';
 import { toDataURL } from 'qrcode';
+import { MailService } from 'src/mail/mail.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthenticationService {
@@ -30,9 +33,22 @@ export class AuthenticationService {
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     private readonly cls: ClsService,
+    private readonly mailService: MailService,
   ) {}
   async signUp(signUp: SignUpDto) {
-    return await this.userService.create(signUp);
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    await this.userService.create({
+      ...signUp,
+      emailVerificationToken: verificationToken,
+    } as any);
+
+    this.mailService
+      .sendVerificationEmail(signUp.email, verificationToken)
+      .catch((err) => console.error('Email Dispatch Failed:', err));
+    return {
+      message:
+        'Registration successful. Please check your email to verify your account.',
+    };
   }
 
   async signIn(signIn: SignInDto) {
@@ -196,5 +212,48 @@ export class AuthenticationService {
     });
 
     return toDataURL(otpauthUrl);
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.userService.findByVerificationToken(token);
+    await this.userService.updateInternal(user._id.toString(), {
+      isEmailVerified: true,
+      emailVerificationToken: undefined,
+    });
+    return { message: 'Email verified successfully.' };
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.userService.findOneEmail(email);
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 3600000);
+
+    await this.userService.updateInternal(user._id.toString(), {
+      passwordResetToken: resetToken,
+      passwordResetExpires: resetExpires,
+    });
+
+    this.mailService
+      .sendPasswordResetEmail(user.email, resetToken)
+      .catch((err) => console.error('Email Dispatch Failed:', err));
+
+    return { message: 'Password reset link sent to your email.' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const user = await this.userService.findByResetToken(token);
+
+    if (!user || user.passwordResetExpires! < new Date()) {
+      throw new BadRequestException('Invalid or expired password reset token.');
+    }
+
+    const hashedPassword = await this.hashService.hash(newPassword);
+    await this.userService.updateInternal(user._id.toString(), {
+      password: hashedPassword,
+      passwordResetToken: undefined,
+      passwordResetExpires: undefined,
+    });
+
+    return { message: 'Password has been reset successfully.' };
   }
 }

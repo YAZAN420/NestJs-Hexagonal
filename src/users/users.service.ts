@@ -49,7 +49,6 @@ export class UsersService extends BaseService<User> {
       ...createUserDto,
       password: hashedPassword,
     });
-
     const savedUser: HydratedDocument<User> = await newUser.save();
     return plainToInstance(UserEntity, savedUser.toObject(), {
       excludeExtraneousValues: true,
@@ -95,6 +94,20 @@ export class UsersService extends BaseService<User> {
       .select('+twoFactorAuthenticationSecret')
       .exec();
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+    return user;
+  }
+  async findByVerificationToken(token: string) {
+    const user = await this.userModel
+      .findOne({ emailVerificationToken: token })
+      .exec();
+    if (!user) throw new NotFoundException(`User not found`);
+    return user;
+  }
+  async findByResetToken(token: string) {
+    const user = await this.userModel
+      .findOne({ passwordResetToken: token })
+      .exec();
+    if (!user) throw new NotFoundException(`User not found`);
     return user;
   }
 

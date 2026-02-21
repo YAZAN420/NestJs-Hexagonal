@@ -7,6 +7,7 @@ import {
   Get,
   Res,
   Inject,
+  Query,
 } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { SignUpDto } from './dto/sign-up.dto';
@@ -92,5 +93,23 @@ export class AuthenticationController {
     @Body('tfaCode') tfaCode: string,
   ) {
     return this.authService.turnOnTwoFactorAuthentication(user.id, tfaCode);
+  }
+
+  @Get('verify-email')
+  async verifyEmail(@Query('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body('email') email: string) {
+    return this.authService.forgotPassword(email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(
+    @Query('token') token: string,
+    @Body('password') newPassword: string,
+  ) {
+    return this.authService.resetPassword(token, newPassword);
   }
 }

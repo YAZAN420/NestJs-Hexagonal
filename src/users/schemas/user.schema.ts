@@ -28,6 +28,18 @@ export class User extends Document {
 
   @Prop({ default: false })
   isTwoFactorAuthenticationEnabled: boolean;
+
+  @Prop({ default: false })
+  isEmailVerified: boolean;
+
+  @Prop()
+  emailVerificationToken?: string;
+
+  @Prop()
+  passwordResetToken?: string;
+
+  @Prop()
+  passwordResetExpires?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
