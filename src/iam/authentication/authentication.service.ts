@@ -128,7 +128,7 @@ export class AuthenticationService {
         throw new UnauthorizedException('Access Denied');
       }
 
-      return await this.generateTokens(user);
+      return { data: await this.generateTokens(user) };
     } catch (err) {
       console.log(err);
       throw new UnauthorizedException('Access Denied');

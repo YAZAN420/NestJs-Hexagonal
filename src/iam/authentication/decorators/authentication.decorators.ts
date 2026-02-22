@@ -7,7 +7,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiBearerAuth } from '@nestjs/swagger';
 import { LocalAuthGuard } from '../guards/local-auth.guard';
 import { Public } from './public.decorator';
 
@@ -38,7 +37,7 @@ export function AuthRefreshTokens() {
 }
 
 export function AuthGetMe() {
-  return applyDecorators(Get('me'), ApiBearerAuth('access-token'));
+  return applyDecorators(Get('me'));
 }
 
 export function AuthTurnOn2FA() {

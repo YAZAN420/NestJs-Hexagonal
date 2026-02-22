@@ -60,8 +60,10 @@ export class AuthenticationController {
     });
     return {
       message: 'User signed in successfully',
-      user: result.user,
-      accessToken: result.tokens.accessToken,
+      data: {
+        user: result.user,
+        accessToken: result.tokens.accessToken,
+      },
     };
   }
 
@@ -73,7 +75,7 @@ export class AuthenticationController {
 
   @AuthGetMe()
   getMe(@ActiveUser() user: ActiveUserData) {
-    return user;
+    return { data: user };
   }
 
   @AuthRefreshTokens()
