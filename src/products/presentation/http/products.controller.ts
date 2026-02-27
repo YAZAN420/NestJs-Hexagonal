@@ -8,7 +8,7 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { PoliciesGuard } from 'src/iam/authorization/guards/policies.guard';
+import { PoliciesGuard } from 'src/iam/presentation/http/guards/policies.guard';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { ProductsService } from 'src/products/application/products.service';

@@ -1,6 +1,6 @@
 import { DynamicModule, Module, Type } from '@nestjs/common';
 import { ProductsService } from './application/products.service';
-import { CaslModule } from 'src/iam/authorization/casl/casl.module';
+import { CaslModule } from 'src/iam/infrastructure/authorization/casl/casl.module';
 import { ProductsController } from './presentation/http/products.controller';
 import { ProductFactory } from 'src/products/domain/factories/product.factory';
 

@@ -3,19 +3,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { HashingService } from 'src/iam/hashing/hashing.service';
-import { CaslAbilityFactory } from 'src/iam/authorization/casl/casl-ability.factory';
 import { UserRepository } from 'src/users/application/ports/user.repository';
 import { UserFactory } from 'src/users/domain/factories/user.factory';
 import { User } from 'src/users/domain/user';
 import { CreateUserCommand } from 'src/users/application/commands/create-user.command';
 import { UpdateUserCommand } from './commands/update-user.command';
+import { HashingPort } from 'src/iam/application/ports/hashing.port';
 
 @Injectable()
 export class UsersService {
   constructor(
-    private readonly abilityFactory: CaslAbilityFactory,
-    private readonly hashService: HashingService,
+    private readonly hashService: HashingPort,
     private readonly userRepository: UserRepository,
     private readonly userFactory: UserFactory,
   ) {}

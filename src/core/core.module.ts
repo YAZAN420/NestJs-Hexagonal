@@ -1,17 +1,19 @@
-import { Module } from '@nestjs/common';
-import { ConfigType } from '@nestjs/config';
+import { Module, Global, DynamicModule } from '@nestjs/common';
+import { ConfigModule, ConfigType } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ClsModule } from 'nestjs-cls';
+import { ThrottlerModule } from '@nestjs/throttler';
+
 import { ApplicationBootstrapOptions } from 'src/common/interfaces/application-bootstrap-options.interface';
 import databaseConfig from 'src/config/database.config';
+import appConfig from 'src/config/app.config';
+import { validate } from 'src/config/env.validation';
 
-@Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-})
+@Global()
+@Module({})
 export class CoreModule {
-  static forRoot(options: ApplicationBootstrapOptions) {
-    const imports =
+  static forRoot(options: ApplicationBootstrapOptions): DynamicModule {
+    const dbImports =
       options.driver === 'mongoose'
         ? [
             MongooseModule.forRootAsync({
@@ -24,9 +26,28 @@ export class CoreModule {
             }),
           ]
         : [];
+
     return {
       module: CoreModule,
-      imports,
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          load: [appConfig, databaseConfig],
+          validate: validate,
+        }),
+        ThrottlerModule.forRoot([
+          {
+            ttl: 60000,
+            limit: 100,
+          },
+        ]),
+        ClsModule.forRoot({
+          global: true,
+          middleware: { mount: true },
+        }),
+        ...dbImports,
+      ],
+      exports: [ConfigModule, ClsModule],
     };
   }
 }

@@ -13,8 +13,8 @@ import { CreateUserCommand } from 'src/users/application/commands/create-user.co
 import { UsersService } from 'src/users/application/users.service';
 import { UpdateUserCommand } from 'src/users/application/commands/update-user.command';
 import { UserResponseDto } from './dto/user-response.dto';
-import type { ActiveUserData } from 'src/iam/authentication/interfaces/active-user-data.interface';
-import { ActiveUser } from 'src/iam/authentication/decorators/active-user.decorator';
+import type { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.interface';
+import { ActiveUser } from 'src/iam/presentation/http/decorators/active-user.decorator';
 
 @Controller('users')
 export class UsersController {

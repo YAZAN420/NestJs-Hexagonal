@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClsService } from 'nestjs-cls';
-import { ActiveUserData } from 'src/iam/authentication/interfaces/active-user-data.interface';
+import { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.interface';
 
-import { CaslAbilityFactory } from 'src/iam/authorization/casl/casl-ability.factory';
 import { CreateProductCommand } from './command/create-product.command';
 import { UpdateProductCommand } from './command/update-product.command';
 import { ProductFactory } from 'src/products/domain/factories/product.factory';
@@ -13,7 +12,6 @@ import { ProductRepository } from 'src/products/application/ports/product.reposi
 @Injectable()
 export class ProductsService {
   constructor(
-    protected readonly abilityFactory: CaslAbilityFactory,
     protected readonly productRepository: ProductRepository,
     protected readonly productFactory: ProductFactory,
     private readonly cls: ClsService,
@@ -63,8 +61,5 @@ export class ProductsService {
     if (!product) throw new NotFoundException('User not found');
     await this.productRepository.delete(id);
     return { message: 'Document deleted successfully' };
-  }
-  protected getAbility() {
-    return this.abilityFactory.createForUser();
   }
 }
