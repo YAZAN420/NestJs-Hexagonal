@@ -29,7 +29,6 @@ import { UserResponseDto } from 'src/users/presentation/http/dto/user-response.d
 import { SignUpDto } from './dto/sign-up.dto';
 import { SignInDto } from './dto/sign-in.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { CLS_KEYS } from 'src/common/constants/cls-keys.constant';
 
 @Controller('authentication')
 export class AuthenticationController {

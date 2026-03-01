@@ -22,7 +22,6 @@ import { CheckPolicies } from 'src/iam/presentation/http/decorators/check-polici
 import { User } from 'src/users/domain/user';
 import { Action } from 'src/iam/domain/enums/action.enum';
 import { CachePort } from 'src/common/application/ports/cache.port';
-import { CLS_KEYS } from 'src/common/constants/cls-keys.constant';
 
 @UseGuards(PoliciesGuard)
 @Controller('users')

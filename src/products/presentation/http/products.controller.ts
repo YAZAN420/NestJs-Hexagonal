@@ -19,7 +19,6 @@ import { Action } from 'src/iam/domain/enums/action.enum';
 import { Product } from 'src/products/domain/product';
 import type { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.interface';
 import { CachePublic } from 'src/common/presentation/decorators/cache-public.decorator';
-import { CLS_KEYS } from 'src/common/constants/cls-keys.constant';
 import { ActiveUser } from 'src/iam/presentation/http/decorators/active-user.decorator';
 
 @UseGuards(PoliciesGuard)
