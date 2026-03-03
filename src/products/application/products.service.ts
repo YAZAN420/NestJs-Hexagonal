@@ -39,7 +39,7 @@ export class ProductsService {
     });
   }
   async findAll() {
-    return await this.productRepository.findAll();
+    return this.productRepository.findAll();
   }
 
   async findOne(id: string): Promise<Product> {

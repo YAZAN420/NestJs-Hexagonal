@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 export interface UpdateProductPayload {
   name?: string;
   description?: string;
@@ -37,10 +36,18 @@ export class Product {
   }
 
   public updateDetails(payload: UpdateProductPayload): void {
-    const cleanData = Object.fromEntries(
-      Object.entries(payload).filter(([_, value]) => value !== undefined),
-    );
-    Object.assign(this, cleanData);
+    if (payload.name !== undefined) {
+      this.name = payload.name;
+    }
+
+    if (payload.description !== undefined) {
+      this.description = payload.description;
+    }
+
+    if (payload.price !== undefined) {
+      this.price = payload.price;
+    }
+
     this.updatedAt = new Date();
   }
 }
