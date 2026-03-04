@@ -6,6 +6,8 @@ type ProductOverrides = Partial<{
   description: string;
   price: number;
   createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
 }>;
 
 export const createMockProduct = (overrides: ProductOverrides = {}): Product =>
@@ -15,6 +17,6 @@ export const createMockProduct = (overrides: ProductOverrides = {}): Product =>
     overrides.description || 'This is a laptop',
     overrides.price || 100,
     overrides.createdBy || 'user-123',
-    new Date(),
-    new Date(),
+    overrides.createdAt || new Date(),
+    overrides.updatedAt || new Date(),
   );
