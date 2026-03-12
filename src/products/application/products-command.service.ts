@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.interface';
 
-import { CreateProductCommand } from './command/create-product.command';
-import { UpdateProductCommand } from './command/update-product.command';
+import { CreateProductCommand } from './commands/create-product.command';
+import { UpdateProductCommand } from './commands/update-product.command';
 import { ProductFactory } from 'src/products/domain/factories/product.factory';
 import { Product } from '../domain/product';
 import { ProductRepository } from 'src/products/application/ports/product.repository';
@@ -15,7 +15,7 @@ import { Action } from 'src/iam/domain/enums/action.enum';
 import { UnitOfWorkPort } from 'src/common/application/ports/unit-of-work.port';
 
 @Injectable()
-export class ProductsService {
+export class ProductsCommandService {
   constructor(
     protected readonly productRepository: ProductRepository,
     protected readonly productFactory: ProductFactory,
@@ -37,19 +37,6 @@ export class ProductsService {
 
       return newProduct;
     });
-  }
-  async findAll() {
-    return this.productRepository.findAll();
-  }
-
-  async findOne(id: string): Promise<Product> {
-    const doc = await this.productRepository.findById(id);
-    if (!doc) {
-      throw new NotFoundException(
-        'Product not found or you do not have permission to read it',
-      );
-    }
-    return doc;
   }
 
   async update(

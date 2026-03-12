@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigType } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -39,7 +39,7 @@ import { HashingModule } from './infrastructure/hashing/hashing.module';
     HashingModule,
     CaslModule,
     MailModule,
-    forwardRef(() => UsersModule),
+    UsersModule,
   ],
   controllers: [AuthenticationController],
   providers: [

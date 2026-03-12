@@ -1,3 +1,4 @@
+import { UsersQueryService } from './users/application/users-query.service';
 import { Module, DynamicModule } from '@nestjs/common';
 import { CoreModule } from './core/core.module';
 import { IamModule } from './iam/iam.module';
@@ -14,6 +15,7 @@ import { DatabaseModule } from './common/infrastructure/database/database.module
 @Module({
   imports: [IamModule, MailModule, CacheModule, DatabaseModule],
   providers: [
+    UsersQueryService,
     {
       provide: APP_INTERCEPTOR,
       useClass: HttpCacheInterceptor,

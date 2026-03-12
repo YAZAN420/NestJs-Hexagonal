@@ -16,7 +16,7 @@ import { Action } from 'src/iam/domain/enums/action.enum';
 import { CachePort } from 'src/common/application/ports/cache.port';
 
 @Injectable()
-export class UsersService {
+export class UsersCommandService {
   constructor(
     private readonly hashService: HashingPort,
     private readonly userRepository: UserRepository,
@@ -47,17 +47,6 @@ export class UsersService {
     await this.cachePort.delete('GET:/users');
 
     return newUser;
-  }
-
-  async findById(id: string): Promise<User> {
-    const user = await this.userRepository.findById(id);
-    if (!user) throw new NotFoundException('User not found');
-    return user;
-  }
-
-  async findAll(): Promise<User[]> {
-    const users = await this.userRepository.findAll();
-    return users;
   }
 
   async remove(id: string): Promise<{ message: string }> {
@@ -119,21 +108,6 @@ export class UsersService {
     await this.userRepository.save(user);
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findByEmail(email);
-  }
-
-  async findByUsername(username: string): Promise<User | null> {
-    return this.userRepository.findByUsername(username);
-  }
-
-  async findByVerificationToken(token: string): Promise<User | null> {
-    return this.userRepository.findByVerificationToken(token);
-  }
-
-  async findByResetToken(token: string): Promise<User | null> {
-    return this.userRepository.findByResetToken(token);
-  }
   async save(user: User): Promise<void> {
     await this.userRepository.save(user);
   }

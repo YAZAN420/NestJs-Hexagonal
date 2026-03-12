@@ -12,20 +12,24 @@ import { ActiveUserData } from '../../domain/interfaces/active-user-data.interfa
 import { OTP } from 'otplib';
 import { toDataURL } from 'qrcode';
 import * as crypto from 'crypto';
-import { UsersService } from 'src/users/application/users.service';
 import { CreateUserCommand } from 'src/users/application/commands/create-user.command';
 import { User } from 'src/users/domain/user';
 import { HashingPort } from '../ports/hashing.port';
 import { SignUpDto } from 'src/iam/presentation/http/dto/sign-up.dto';
 import { RefreshTokenDto } from 'src/iam/presentation/http/dto/refresh-token.dto';
 import { MailPort } from 'src/shared/mail/application/ports/mail.port';
+import { UsersCommandService } from 'src/users/application/users-command.service';
+import { UsersQueryService } from 'src/users/application/users-query.service';
+import { GetUserByIdQuery } from 'src/users/application/queries/get-user-by-id.query';
+import { GetUserByEmailQuery } from 'src/users/application/queries/get-user-by-email.query';
 @Injectable()
 export class AuthenticationService {
   private readonly otp = new OTP();
   constructor(
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
-    private readonly userService: UsersService,
+    private readonly usersCommandService: UsersCommandService,
+    private readonly usersQueryService: UsersQueryService,
     private readonly hashingPort: HashingPort,
     private readonly jwtService: JwtService,
     private readonly mailPort: MailPort,
@@ -37,10 +41,10 @@ export class AuthenticationService {
       signUp.email,
       signUp.password,
     );
-    const newUser = await this.userService.create(command);
+    const newUser = await this.usersCommandService.create(command);
 
     newUser.setVerificationToken(verificationToken);
-    await this.userService.save(newUser);
+    await this.usersCommandService.save(newUser);
 
     this.mailPort
       .sendVerificationEmail(signUp.email, verificationToken)
@@ -86,7 +90,9 @@ export class AuthenticationService {
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.userService.findByEmail(email);
+    const query = new GetUserByEmailQuery(email);
+
+    const user = await this.usersQueryService.findByEmail(query);
 
     if (!user) return null;
 
@@ -99,7 +105,7 @@ export class AuthenticationService {
   }
 
   async signOut(id: string) {
-    await this.userService.updateRefreshToken(id, null);
+    await this.usersCommandService.updateRefreshToken(id, null);
     return { message: 'User signed out successfully' };
   }
 
@@ -113,7 +119,8 @@ export class AuthenticationService {
           issuer: this.jwtConfiguration.issuer,
         },
       );
-      const user = await this.userService.findById(id);
+      const query = new GetUserByIdQuery(id);
+      const user = await this.usersQueryService.findById(query);
       const isValid = await this.hashingPort.compare(
         refreshTokenDto.refreshToken,
         user.getRefreshToken() ?? '',
@@ -141,7 +148,10 @@ export class AuthenticationService {
 
     const hashedRefreshToken = await this.hashingPort.hash(refreshToken);
 
-    await this.userService.updateRefreshToken(user.getId(), hashedRefreshToken);
+    await this.usersCommandService.updateRefreshToken(
+      user.getId(),
+      hashedRefreshToken,
+    );
 
     return {
       accessToken,
@@ -164,7 +174,9 @@ export class AuthenticationService {
   }
 
   async turnOnTwoFactorAuthentication(userId: string, code: string) {
-    const user = await this.userService.findById(userId);
+    const query = new GetUserByIdQuery(userId);
+
+    const user = await this.usersQueryService.findById(query);
 
     if (!user.getTwoFactorAuthenticationSecret()) {
       throw new UnauthorizedException(
@@ -182,13 +194,15 @@ export class AuthenticationService {
     }
 
     user.enableTwoFactorAuth(user.getTwoFactorAuthenticationSecret()!);
-    await this.userService.save(user);
+    await this.usersCommandService.save(user);
 
     return { message: 'Two-factor authentication successfully enabled' };
   }
 
   async generateTwoFactorAuthenticationSecret(activeUser: ActiveUserData) {
-    const user = await this.userService.findById(activeUser.id);
+    const query = new GetUserByIdQuery(activeUser.id);
+
+    const user = await this.usersQueryService.findById(query);
     if (!user) throw new UnauthorizedException();
 
     const secret = this.otp.generateSecret();
@@ -199,27 +213,28 @@ export class AuthenticationService {
     });
 
     user.setTwoFactorSecret(secret);
-    await this.userService.save(user);
+    await this.usersCommandService.save(user);
 
     return toDataURL(otpauthUrl);
   }
 
   async verifyEmail(token: string) {
-    const user = await this.userService.findByVerificationToken(token);
+    const user = await this.usersQueryService.findByVerificationToken(token);
     if (!user) throw new BadRequestException('Invalid token');
     user.verifyEmail(token);
-    await this.userService.save(user);
+    await this.usersCommandService.save(user);
     return { message: 'Email verified successfully.' };
   }
 
   async forgotPassword(email: string) {
-    const user = await this.userService.findByEmail(email);
+    const query = new GetUserByEmailQuery(email);
+    const user = await this.usersQueryService.findByEmail(query);
     if (!user) return { message: 'Password reset link sent to your email.' };
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetExpires = new Date(Date.now() + 3600000);
 
     user.generatePasswordResetToken(resetToken, resetExpires);
-    await this.userService.save(user);
+    await this.usersCommandService.save(user);
 
     this.mailPort
       .sendPasswordResetEmail(user.getEmailValue(), resetToken)
@@ -229,7 +244,7 @@ export class AuthenticationService {
   }
 
   async resetPassword(token: string, newPassword: string) {
-    const user = await this.userService.findByResetToken(token);
+    const user = await this.usersQueryService.findByResetToken(token);
 
     if (!user) {
       throw new BadRequestException('Invalid or expired password reset token.');
@@ -237,7 +252,7 @@ export class AuthenticationService {
     const hashedPassword = await this.hashingPort.hash(newPassword);
 
     user.resetPasswordWithToken(hashedPassword, token);
-    await this.userService.save(user);
+    await this.usersCommandService.save(user);
 
     return { message: 'Password has been reset successfully.' };
   }

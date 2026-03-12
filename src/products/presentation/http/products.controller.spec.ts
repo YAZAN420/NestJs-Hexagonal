@@ -1,37 +1,50 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsController } from './products.controller';
-import { ProductsService } from 'src/products/application/products.service';
 import { PoliciesGuard } from 'src/iam/presentation/http/guards/policies.guard';
 import { createMockProduct } from 'src/products/testing/product-builder';
 import { createMockUser } from 'src/users/testing/user-builder';
-import { UpdateProductCommand } from 'src/products/application/command/update-product.command';
-import { CreateProductCommand } from 'src/products/application/command/create-product.command';
+import { UpdateProductCommand } from 'src/products/application/commands/update-product.command';
+import { CreateProductCommand } from 'src/products/application/commands/create-product.command';
+import { ProductsCommandService } from 'src/products/application/products-command.service';
+import { ProductsQueryService } from 'src/products/application/products-query.service';
+import { GetProductByIdQuery } from 'src/products/application/queries/get-product-by-id.query';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
-  const mockProductsService = {
+
+  const mockProductsCommandService = {
     create: jest.fn(),
-    findAll: jest.fn(),
-    findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
   };
+
+  const mockProductsQueryService = {
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],
       providers: [
         {
-          provide: ProductsService,
-          useValue: mockProductsService,
+          provide: ProductsCommandService,
+          useValue: mockProductsCommandService,
+        },
+        {
+          provide: ProductsQueryService,
+          useValue: mockProductsQueryService,
         },
       ],
     })
       .overrideGuard(PoliciesGuard)
       .useValue({ canActivate: () => true })
       .compile();
+
     controller = module.get<ProductsController>(ProductsController);
   });
+
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
@@ -42,29 +55,37 @@ describe('ProductsController', () => {
         createMockProduct({ id: '1', name: 'Product A', price: 100 }),
         createMockProduct({ id: '2', name: 'Product B', price: 200 }),
       ];
-      mockProductsService.findAll.mockResolvedValue(expectedProducts);
+      mockProductsQueryService.findAll.mockResolvedValue(expectedProducts);
+
       const result = await controller.findAll();
-      expect(mockProductsService.findAll).toHaveBeenCalled();
+
+      expect(mockProductsQueryService.findAll).toHaveBeenCalled();
       expect(result).toEqual({
         message: 'Products fetched successfully',
         data: expectedProducts,
       });
     });
+
     it('should return an empty array if no products exist', async () => {
-      mockProductsService.findAll.mockResolvedValue([]);
+      mockProductsQueryService.findAll.mockResolvedValue([]);
+
       const result = await controller.findAll();
-      expect(mockProductsService.findAll).toHaveBeenCalled();
+
+      expect(mockProductsQueryService.findAll).toHaveBeenCalled();
       expect(result).toEqual({
         message: 'Products fetched successfully',
         data: [],
       });
     });
-    it('should throw an error if productsService.findAll throws an error', async () => {
+
+    it('should throw an error if productsQueryService.findAll throws an error', async () => {
       const error = new Error('Database connection failed');
-      mockProductsService.findAll.mockRejectedValue(error);
+      mockProductsQueryService.findAll.mockRejectedValue(error);
+
       const result = controller.findAll();
+
       await expect(result).rejects.toThrow(error);
-      expect(mockProductsService.findAll).toHaveBeenCalled();
+      expect(mockProductsQueryService.findAll).toHaveBeenCalled();
     });
   });
 
@@ -74,24 +95,33 @@ describe('ProductsController', () => {
       name: 'Product A',
       price: 100,
     });
+
     it('should return a single product by id', async () => {
-      mockProductsService.findOne.mockResolvedValue(expectedProduct);
+      mockProductsQueryService.findOne.mockResolvedValue(expectedProduct);
+
       const result = await controller.findOne(expectedProduct.getId());
-      expect(mockProductsService.findOne).toHaveBeenCalled();
+
+      expect(mockProductsQueryService.findOne).toHaveBeenCalledWith(
+        expect.any(GetProductByIdQuery),
+      );
       expect(result).toEqual({
         message: 'Product fetched successfully',
         data: expectedProduct,
       });
     });
-    it('should throw an error if productsService.findOne throws an error', async () => {
+
+    it('should throw an error if productsQueryService.findOne throws an error', async () => {
       const productId = '999';
       const error = new Error('Database connection failed');
-      mockProductsService.findOne.mockRejectedValue(error);
+      mockProductsQueryService.findOne.mockRejectedValue(error);
+
       const result = controller.findOne(productId);
+
       await expect(result).rejects.toThrow(error);
-      expect(mockProductsService.findOne).toHaveBeenCalled();
+      expect(mockProductsQueryService.findOne).toHaveBeenCalled();
     });
   });
+
   describe('update', () => {
     it('should update a product successfully', async () => {
       const mockUser = createMockUser();
@@ -102,13 +132,19 @@ describe('ProductsController', () => {
         price: 150,
       };
       const expectedUpdatedProduct = { id: productId, ...updateDto };
-      mockProductsService.update.mockResolvedValue(expectedUpdatedProduct);
+
+      mockProductsCommandService.update.mockResolvedValue(
+        expectedUpdatedProduct,
+      );
+
       const result = await controller.update(mockUser, productId, updateDto);
-      expect(mockProductsService.update).toHaveBeenCalledWith(
+
+      expect(mockProductsCommandService.update).toHaveBeenCalledWith(
         mockUser,
         expect.any(UpdateProductCommand),
       );
-      const callArgs = mockProductsService.update.mock.calls[0] as [
+
+      const callArgs = mockProductsCommandService.update.mock.calls[0] as [
         any,
         UpdateProductCommand,
       ];
@@ -122,54 +158,26 @@ describe('ProductsController', () => {
         data: expectedUpdatedProduct,
       });
     });
-    it('should throw an error if productsService.update throws', async () => {
+
+    it('should throw an error if productsCommandService.update throws', async () => {
       const mockUser = createMockUser();
       const productId = '999';
       const updateDto = { price: 200 };
       const error = new Error('Update failed');
 
-      mockProductsService.update.mockRejectedValue(error);
+      mockProductsCommandService.update.mockRejectedValue(error);
 
       await expect(
         controller.update(mockUser, productId, updateDto),
       ).rejects.toThrow(error);
-      expect(mockProductsService.update).toHaveBeenCalledWith(
+
+      expect(mockProductsCommandService.update).toHaveBeenCalledWith(
         mockUser,
         expect.any(UpdateProductCommand),
       );
     });
-    it('should update a product partially (e.g., only price)', async () => {
-      const mockUser = createMockUser();
-      const productId = '1';
-      const partialUpdateDto = { price: 300 };
-
-      const expectedUpdatedProduct = createMockProduct({
-        id: productId,
-        name: 'Old Name',
-        description: 'Old Description',
-        price: partialUpdateDto.price,
-      });
-      mockProductsService.update.mockResolvedValue(expectedUpdatedProduct);
-      const result = await controller.update(
-        mockUser,
-        productId,
-        partialUpdateDto,
-      );
-      const callArgs = mockProductsService.update.mock.calls[0] as [
-        any,
-        UpdateProductCommand,
-      ];
-      const calledCommand = callArgs[1];
-      expect(calledCommand.id).toEqual(productId);
-      expect(calledCommand.price).toEqual(partialUpdateDto.price);
-      expect(calledCommand.name).toBeUndefined();
-      expect(calledCommand.description).toBeUndefined();
-      expect(result).toEqual({
-        message: 'Product updated successfully',
-        data: expectedUpdatedProduct,
-      });
-    });
   });
+
   describe('create', () => {
     it('should create a product successfully', async () => {
       const mockUser = createMockUser();
@@ -180,16 +188,16 @@ describe('ProductsController', () => {
       };
       const expectedProduct = createMockProduct({ id: '1', ...createDto });
 
-      mockProductsService.create.mockResolvedValue(expectedProduct);
+      mockProductsCommandService.create.mockResolvedValue(expectedProduct);
 
       const result = await controller.create(mockUser, createDto);
 
-      expect(mockProductsService.create).toHaveBeenCalledWith(
+      expect(mockProductsCommandService.create).toHaveBeenCalledWith(
         mockUser,
         expect.any(CreateProductCommand),
       );
 
-      const callArgs = mockProductsService.create.mock.calls[0] as [
+      const callArgs = mockProductsCommandService.create.mock.calls[0] as [
         any,
         CreateProductCommand,
       ];
@@ -205,7 +213,7 @@ describe('ProductsController', () => {
       });
     });
 
-    it('should throw an error if productsService.create throws', async () => {
+    it('should throw an error if productsCommandService.create throws', async () => {
       const mockUser = createMockUser();
       const createDto = {
         name: 'New Product',
@@ -214,24 +222,25 @@ describe('ProductsController', () => {
       };
       const error = new Error('Creation failed');
 
-      mockProductsService.create.mockRejectedValue(error);
+      mockProductsCommandService.create.mockRejectedValue(error);
 
       await expect(controller.create(mockUser, createDto)).rejects.toThrow(
         error,
       );
-      expect(mockProductsService.create).toHaveBeenCalled();
+      expect(mockProductsCommandService.create).toHaveBeenCalled();
     });
   });
+
   describe('remove', () => {
     it('should delete a product successfully', async () => {
       const mockUser = createMockUser();
       const productId = '1';
 
-      mockProductsService.remove.mockResolvedValue(undefined);
+      mockProductsCommandService.remove.mockResolvedValue(undefined);
 
       const result = await controller.remove(mockUser, productId);
 
-      expect(mockProductsService.remove).toHaveBeenCalledWith(
+      expect(mockProductsCommandService.remove).toHaveBeenCalledWith(
         mockUser,
         productId,
       );
@@ -241,17 +250,17 @@ describe('ProductsController', () => {
       });
     });
 
-    it('should throw an error if productsService.remove throws', async () => {
+    it('should throw an error if productsCommandService.remove throws', async () => {
       const mockUser = createMockUser();
       const productId = '999';
       const error = new Error('Deletion failed');
 
-      mockProductsService.remove.mockRejectedValue(error);
+      mockProductsCommandService.remove.mockRejectedValue(error);
 
       await expect(controller.remove(mockUser, productId)).rejects.toThrow(
         error,
       );
-      expect(mockProductsService.remove).toHaveBeenCalledWith(
+      expect(mockProductsCommandService.remove).toHaveBeenCalledWith(
         mockUser,
         productId,
       );

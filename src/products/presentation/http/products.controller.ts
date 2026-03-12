@@ -11,20 +11,25 @@ import {
 import { PoliciesGuard } from 'src/iam/presentation/http/guards/policies.guard';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CreateProductDto } from './dto/create-product.dto';
-import { ProductsService } from 'src/products/application/products.service';
-import { CreateProductCommand } from 'src/products/application/command/create-product.command';
-import { UpdateProductCommand } from 'src/products/application/command/update-product.command';
+import { CreateProductCommand } from 'src/products/application/commands/create-product.command';
+import { UpdateProductCommand } from 'src/products/application/commands/update-product.command';
 import { CheckPolicies } from 'src/iam/presentation/http/decorators/check-policies.decorator';
 import { Action } from 'src/iam/domain/enums/action.enum';
 import { Product } from 'src/products/domain/product';
 import type { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.interface';
 import { CachePublic } from 'src/common/presentation/decorators/cache-public.decorator';
 import { ActiveUser } from 'src/iam/presentation/http/decorators/active-user.decorator';
+import { ProductsCommandService } from 'src/products/application/products-command.service';
+import { ProductsQueryService } from 'src/products/application/products-query.service';
+import { GetProductByIdQuery } from 'src/products/application/queries/get-product-by-id.query';
 
 @UseGuards(PoliciesGuard)
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsCommandService: ProductsCommandService,
+    private readonly productsQueryService: ProductsQueryService,
+  ) {}
 
   @CheckPolicies([
     (authPort, user) => authPort.checkPermission(user, Action.Create, Product),
@@ -34,14 +39,12 @@ export class ProductsController {
     @ActiveUser() user: ActiveUserData,
     @Body() createProductDto: CreateProductDto,
   ) {
-    const product = await this.productsService.create(
-      user,
-      new CreateProductCommand(
-        createProductDto.name,
-        createProductDto.description,
-        createProductDto.price,
-      ),
+    const command = new CreateProductCommand(
+      createProductDto.name,
+      createProductDto.description,
+      createProductDto.price,
     );
+    const product = await this.productsCommandService.create(user, command);
     return {
       message: 'Product created successfully',
       data: product,
@@ -53,7 +56,7 @@ export class ProductsController {
   @Get()
   @CachePublic()
   async findAll() {
-    const products = await this.productsService.findAll();
+    const products = await this.productsQueryService.findAll();
     return {
       message: 'Products fetched successfully',
       data: products,
@@ -65,7 +68,8 @@ export class ProductsController {
   ])
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    const product = await this.productsService.findOne(id);
+    const query = new GetProductByIdQuery(id);
+    const product = await this.productsQueryService.findOne(query);
     return {
       message: 'Product fetched successfully',
       data: product,
@@ -81,7 +85,7 @@ export class ProductsController {
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
   ) {
-    const newProduct = await this.productsService.update(
+    const newProduct = await this.productsCommandService.update(
       user,
       new UpdateProductCommand(
         id,
@@ -101,7 +105,7 @@ export class ProductsController {
   ])
   @Delete(':id')
   async remove(@ActiveUser() user: ActiveUserData, @Param('id') id: string) {
-    await this.productsService.remove(user, id);
+    await this.productsCommandService.remove(user, id);
     return {
       message: 'Product deleted successfully',
     };
