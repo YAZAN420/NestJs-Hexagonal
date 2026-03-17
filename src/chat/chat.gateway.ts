@@ -16,8 +16,9 @@ import { ActiveUserData } from 'src/iam/domain/interfaces/active-user-data.inter
 import { ChatService } from './chat.service';
 import { WsExceptionFilter } from 'src/common/presentation/filters/ws-exception.filter';
 import type { ChatPayload } from './interfaces/chat-payload.interface';
+import { WsThrottlerGuard } from './guards/ws-throttler.guard';
 
-@UseGuards(AccessTokenGuard)
+@UseGuards(AccessTokenGuard, WsThrottlerGuard)
 @UseFilters(WsExceptionFilter)
 @WebSocketGateway({
   pingInterval: 10000,
@@ -25,6 +26,10 @@ import type { ChatPayload } from './interfaces/chat-payload.interface';
   transports: ['websocket'],
   cors: {
     origin: '*',
+  },
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: true,
   },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -148,7 +153,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket & { user?: ActiveUserData },
   ) {
     const { user, targetRoom } = this.validateAndGetContext(client, data);
-    client.broadcast
+    client.broadcast.volatile
       .to(targetRoom)
       .emit('userTyping', { typing: true, userId: user.id });
   }
@@ -159,7 +164,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket & { user?: ActiveUserData },
   ) {
     const { user, targetRoom } = this.validateAndGetContext(client, data);
-    client.broadcast
+    client.broadcast.volatile
       .to(targetRoom)
       .emit('userTyping', { typing: false, userId: user.id });
   }

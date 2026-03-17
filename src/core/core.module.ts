@@ -38,8 +38,8 @@ export class CoreModule {
         }),
         ThrottlerModule.forRoot([
           {
-            ttl: 60000,
-            limit: 100,
+            ttl: 10000,
+            limit: 10,
           },
         ]),
         ClsModule.forRoot({
