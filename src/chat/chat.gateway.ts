@@ -19,7 +19,14 @@ import type { ChatPayload } from './interfaces/chat-payload.interface';
 
 @UseGuards(AccessTokenGuard)
 @UseFilters(WsExceptionFilter)
-@WebSocketGateway()
+@WebSocketGateway({
+  pingInterval: 10000,
+  pingTimeout: 5000,
+  transports: ['websocket'],
+  cors: {
+    origin: '*',
+  },
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly chatService: ChatService) {}
 
