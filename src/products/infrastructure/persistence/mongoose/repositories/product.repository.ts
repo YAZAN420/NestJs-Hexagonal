@@ -7,7 +7,9 @@ import { Product as MongoProduct } from '../schemas/product.schema';
 import { ClsService } from 'nestjs-cls';
 import { AppClsStore } from 'src/common/interfaces/app-cls-store.interface';
 import { CLS_KEYS } from 'src/common/constants/cls-keys.constant';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class MongooseProductRepository implements ProductRepository {
   constructor(
     @InjectModel(MongoProduct.name)

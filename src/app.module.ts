@@ -1,6 +1,6 @@
 import { ChatModule } from './chat/chat.module';
 import { UsersQueryService } from './users/application/users-query.service';
-import { Module, DynamicModule } from '@nestjs/common';
+import { Module, DynamicModule, OnApplicationBootstrap } from '@nestjs/common';
 import { CoreModule } from './core/core.module';
 import { IamModule } from './iam/iam.module';
 import { MailModule } from './shared/mail/mail.module';
@@ -13,8 +13,9 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { HttpCacheInterceptor } from './common/presentation/interceptors/http-cache.interceptor';
 import { CacheModule } from './common/infrastructure/cache/cache.module';
 import { DatabaseModule } from './common/infrastructure/database/database.module';
+import { CachePort } from './common/application/ports/cache.port';
 @Module({
-  imports: [ChatModule, IamModule, MailModule, CacheModule, DatabaseModule],
+  imports: [ChatModule, IamModule, MailModule, CacheModule],
   providers: [
     UsersQueryService,
     {
@@ -23,12 +24,18 @@ import { DatabaseModule } from './common/infrastructure/database/database.module
     },
   ],
 })
-export class AppModule {
+export class AppModule implements OnApplicationBootstrap {
+  constructor(private readonly cachePort: CachePort) {}
+  async onApplicationBootstrap() {
+    await this.cachePort.deleteByPattern('GET:*');
+  }
   static register(options: ApplicationBootstrapOptions): DynamicModule {
     return {
       module: AppModule,
       imports: [
         CoreModule.forRoot({ driver: options.driver }),
+
+        DatabaseModule.use(options.driver),
 
         UsersModule.withInfrastructure(
           UsersInfrastructureModule.use(options.driver),

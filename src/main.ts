@@ -11,12 +11,11 @@ import { GlobalExceptionFilter } from './common/presentation/filters/global-exce
 
 async function bootstrap() {
   const app = await NestFactory.create(
-    AppModule.register({ driver: 'mongoose' }),
+    AppModule.register({ driver: 'in-memory' }),
     {
       logger: WinstonModule.createLogger(winstonConfig),
     },
   );
-
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.use(helmet());

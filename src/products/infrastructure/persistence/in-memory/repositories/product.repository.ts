@@ -2,7 +2,9 @@ import { ProductRepository } from 'src/products/application/ports/product.reposi
 import { Product } from 'src/products/domain/product';
 import { ProductMapper } from '../mappers/product.mapper';
 import { Product as InMemoryProduct } from '../entities/product.entity';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class InMemoryProductRepository implements ProductRepository {
   private readonly products = new Map<string, InMemoryProduct>();
   constructor(private readonly productMapper: ProductMapper) {}

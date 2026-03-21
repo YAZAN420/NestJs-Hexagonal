@@ -13,6 +13,7 @@ import { ProductRepository } from 'src/products/application/ports/product.reposi
 import { AuthorizationPort } from 'src/iam/application/ports/authorization.port';
 import { Action } from 'src/iam/domain/enums/action.enum';
 import { UnitOfWorkPort } from 'src/common/application/ports/unit-of-work.port';
+import { CachePort } from 'src/common/application/ports/cache.port';
 
 @Injectable()
 export class ProductsCommandService {
@@ -21,6 +22,7 @@ export class ProductsCommandService {
     protected readonly productFactory: ProductFactory,
     protected readonly authPort: AuthorizationPort,
     protected readonly unitOfWork: UnitOfWorkPort,
+    protected readonly cachePort: CachePort,
   ) {}
   async create(
     user: ActiveUserData,
@@ -34,7 +36,7 @@ export class ProductsCommandService {
         user.id,
       );
       await this.productRepository.save(newProduct);
-
+      await this.clearProductsCache();
       return newProduct;
     });
   }
@@ -67,7 +69,7 @@ export class ProductsCommandService {
       product.updateDetails(updatePayload);
 
       await this.productRepository.save(product);
-
+      await this.clearProductsCache();
       return product;
     });
   }
@@ -90,8 +92,11 @@ export class ProductsCommandService {
       }
 
       await this.productRepository.delete(id);
-
+      await this.clearProductsCache();
       return { message: 'Document deleted successfully' };
     });
+  }
+  private async clearProductsCache() {
+    await this.cachePort.deleteByPattern('GET:/products*');
   }
 }
