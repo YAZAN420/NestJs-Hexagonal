@@ -11,6 +11,7 @@ import { UpdateProductCommand } from './commands/update-product.command';
 import { CreateProductCommand } from './commands/create-product.command';
 import { createMockProduct } from '../testing/product-builder';
 import { createMockUser } from 'src/users/testing/user-builder';
+import { CachePort } from 'src/common/application/ports/cache.port';
 
 describe('ProductsCommandService', () => {
   let service: ProductsCommandService;
@@ -33,6 +34,10 @@ describe('ProductsCommandService', () => {
     execute: jest.fn().mockImplementation((work: () => unknown) => work()),
   };
 
+  const mockCachePort = {
+    deleteByPattern: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -41,6 +46,7 @@ describe('ProductsCommandService', () => {
         { provide: ProductFactory, useValue: mockProductFactory },
         { provide: AuthorizationPort, useValue: mockAuthPort },
         { provide: UnitOfWorkPort, useValue: mockUnitOfWork },
+        { provide: CachePort, useValue: mockCachePort },
       ],
     }).compile();
 
@@ -89,6 +95,9 @@ describe('ProductsCommandService', () => {
       );
       expect(mockProductRepo.save).toHaveBeenCalledWith(expectedProduct);
       expect(result).toEqual(expectedProduct);
+      expect(mockCachePort.deleteByPattern).toHaveBeenCalledWith(
+        'GET:/products*',
+      );
     });
 
     it('should throw if saving fails', async () => {
@@ -156,6 +165,9 @@ describe('ProductsCommandService', () => {
       expect(result.getPrice()).toBe(250);
       expect(mockProductRepo.save).toHaveBeenCalledTimes(1);
       expect(mockProductRepo.save).toHaveBeenCalledWith(existingProduct);
+      expect(mockCachePort.deleteByPattern).toHaveBeenCalledWith(
+        'GET:/products*',
+      );
     });
 
     it('should strip the "id" from the command before passing it to the domain entity', async () => {
@@ -199,6 +211,9 @@ describe('ProductsCommandService', () => {
         expectedProduct.getId(),
       );
       expect(result).toEqual({ message: 'Document deleted successfully' });
+      expect(mockCachePort.deleteByPattern).toHaveBeenCalledWith(
+        'GET:/products*',
+      );
     });
 
     it('should throw NotFoundException if product does not exist', async () => {
