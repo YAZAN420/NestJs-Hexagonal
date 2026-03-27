@@ -11,56 +11,62 @@ import { ResponseInterceptor } from './common/presentation/interceptors/response
 import { GlobalExceptionFilter } from './common/presentation/filters/global-exception.filter';
 
 async function bootstrap() {
-  const dbDriver =
-    (process.env.DB_TYPE as 'mongoose' | 'in-memory') || 'mongoose';
-  console.log(
-    '🚀 Server is waking up... Reading DB_TYPE:',
-    process.env.DB_TYPE,
-  );
-  const app = await NestFactory.create(
-    AppModule.register({ driver: dbDriver }),
-    {
-      logger: WinstonModule.createLogger(winstonConfig),
-    },
-  );
-  app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalInterceptors(new ResponseInterceptor());
-  app.use(helmet());
-
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
-  );
-
-  app.use(cookieParser());
-
-  const config = new DocumentBuilder()
-    .setTitle('NestJS Course API')
-    .setDescription('The helper API description')
-    .setVersion('1.0')
-    .addBearerAuth(
+  try {
+    const dbDriver =
+      (process.env.DB_TYPE as 'mongoose' | 'in-memory') || 'mongoose';
+    console.log(
+      '🚀 Server is waking up... Reading DB_TYPE:',
+      process.env.DB_TYPE,
+    );
+    const app = await NestFactory.create(
+      AppModule.register({ driver: dbDriver }),
       {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
+        logger: WinstonModule.createLogger(winstonConfig),
       },
-      'access-token',
-    )
-    .build();
+    );
+    app.useGlobalFilters(new GlobalExceptionFilter());
+    app.useGlobalInterceptors(new ResponseInterceptor());
+    app.use(helmet());
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+    app.enableCors({
+      origin: true,
+      credentials: true,
+    });
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    );
 
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+    app.use(cookieParser());
+
+    const config = new DocumentBuilder()
+      .setTitle('NestJS Course API')
+      .setDescription('The helper API description')
+      .setVersion('1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+        'access-token',
+      )
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+
+    await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+  } catch (error) {
+    console.error('❌ FATAL ERROR DURING BOOTSTRAP:');
+    console.error(error);
+    process.exit(1);
+  }
 }
 bootstrap().catch(console.error);
