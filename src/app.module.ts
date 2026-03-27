@@ -52,8 +52,15 @@ import { ExpressAdapter } from '@bull-board/express';
 })
 export class AppModule implements OnApplicationBootstrap {
   constructor(private readonly cachePort: CachePort) {}
-  async onApplicationBootstrap() {
-    await this.cachePort.deleteByPattern('GET:*');
+  onApplicationBootstrap() {
+    console.log('🧹 Attempting to clear cache...');
+    this.cachePort
+      .deleteByPattern('GET:*')
+      .then(() => console.log('✅ Cache cleared successfully'))
+      .catch((err) => {
+        console.error('⚠️ Cache clearing failed, but server is safe!');
+        console.error(err);
+      });
   }
   static register(options: ApplicationBootstrapOptions): DynamicModule {
     return {
