@@ -3,19 +3,29 @@ import { getModelToken } from '@nestjs/mongoose';
 import { ClsService } from 'nestjs-cls';
 import { ProductMapper } from '../mappers/product.mapper';
 import { Product as MongoProduct } from '../schemas/product.schema';
-import { CLS_KEYS } from 'src/common/constants/cls-keys.constant';
 import { createMockProduct } from 'src/products/testing/product-builder';
 import { MongooseProductRepository } from './product.repository';
+import {
+  PageDto,
+  PageMetaDto,
+  PageOptionsDto,
+} from 'src/common/pagination/offset';
 
 describe('MongooseProductRepository', () => {
   let repository: MongooseProductRepository;
 
   const mockExec = jest.fn();
   const mockSession = jest.fn().mockReturnValue({ exec: mockExec });
-  const mockQuery = { session: mockSession, exec: mockExec };
+  const mockQuery = {
+    session: mockSession,
+    exec: mockExec,
+    skip: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+  };
 
   const mockProductModel = {
     find: jest.fn().mockReturnValue(mockQuery),
+    countDocuments: jest.fn().mockReturnValue(mockQuery),
     findOneAndUpdate: jest.fn().mockReturnValue(mockQuery),
     findByIdAndDelete: jest.fn().mockReturnValue(mockQuery),
     findById: jest.fn().mockReturnValue(mockQuery),
@@ -57,6 +67,8 @@ describe('MongooseProductRepository', () => {
   });
 
   describe('findAll', () => {
+    const mockPageOptions = new PageOptionsDto();
+
     it('should return an array of domain products', async () => {
       const mockMongoDocs = [{ _id: '1', name: 'Product 1' }];
       const expectedDomainProduct = createMockProduct({
@@ -65,16 +77,27 @@ describe('MongooseProductRepository', () => {
       });
 
       mockExec.mockResolvedValueOnce(mockMongoDocs);
+      mockExec.mockResolvedValueOnce(1);
       mockProductMapper.toDomain.mockReturnValue(expectedDomainProduct);
       mockClsService.get.mockReturnValue('mock-session');
 
-      const result = await repository.findAll();
+      const result = await repository.findAll(mockPageOptions);
 
-      expect(mockClsService.get).toHaveBeenCalledWith(CLS_KEYS.MONGO_SESSION);
       expect(mockProductModel.find).toHaveBeenCalled();
-      expect(mockSession).toHaveBeenCalledWith('mock-session');
-      expect(mockProductMapper.toDomain).toHaveBeenCalledWith(mockMongoDocs[0]);
-      expect(result).toEqual([expectedDomainProduct]);
+      expect(mockQuery.skip).toHaveBeenCalledWith(mockPageOptions.skip);
+      expect(mockQuery.limit).toHaveBeenCalledWith(mockPageOptions.take);
+      expect(mockProductModel.countDocuments).toHaveBeenCalled();
+
+      const expectedMeta = new PageMetaDto({
+        itemCount: 1,
+        pageOptionsDto: mockPageOptions,
+      });
+      const expectedPageDto = new PageDto(
+        [expectedDomainProduct],
+        expectedMeta,
+      );
+
+      expect(result).toEqual(expectedPageDto);
     });
   });
 

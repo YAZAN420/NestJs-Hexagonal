@@ -8,6 +8,7 @@ import { CreateProductCommand } from 'src/products/application/commands/create-p
 import { ProductsCommandService } from 'src/products/application/products-command.service';
 import { ProductsQueryService } from 'src/products/application/products-query.service';
 import { GetProductByIdQuery } from 'src/products/application/queries/get-product-by-id.query';
+import { PageOptionsDto } from 'src/common/pagination/offset';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
@@ -50,31 +51,50 @@ describe('ProductsController', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of products', async () => {
+    const mockPageOptions = new PageOptionsDto();
+
+    const mockMeta = {
+      page: 1,
+      take: 10,
+      itemCount: 2,
+      pageCount: 1,
+      hasPreviousPage: false,
+      hasNextPage: false,
+    };
+    it('should return a paginated list of products', async () => {
       const expectedProducts = [
         createMockProduct({ id: '1', name: 'Product A', price: 100 }),
         createMockProduct({ id: '2', name: 'Product B', price: 200 }),
       ];
-      mockProductsQueryService.findAll.mockResolvedValue(expectedProducts);
+      mockProductsQueryService.findAll.mockResolvedValue({
+        data: expectedProducts,
+        meta: mockMeta,
+      });
 
-      const result = await controller.findAll();
+      const result = await controller.findAll(mockPageOptions);
 
-      expect(mockProductsQueryService.findAll).toHaveBeenCalled();
+      expect(mockProductsQueryService.findAll).toHaveBeenCalledWith(
+        mockPageOptions,
+      );
       expect(result).toEqual({
         message: 'Products fetched successfully',
         data: expectedProducts,
+        meta: mockMeta,
       });
     });
 
-    it('should return an empty array if no products exist', async () => {
-      mockProductsQueryService.findAll.mockResolvedValue([]);
-
-      const result = await controller.findAll();
+    it('should return an empty paginated list if no products exist', async () => {
+      mockProductsQueryService.findAll.mockResolvedValue({
+        data: [],
+        meta: { ...mockMeta, itemCount: 0 },
+      });
+      const result = await controller.findAll(mockPageOptions);
 
       expect(mockProductsQueryService.findAll).toHaveBeenCalled();
       expect(result).toEqual({
         message: 'Products fetched successfully',
         data: [],
+        meta: { ...mockMeta, itemCount: 0 },
       });
     });
 
@@ -82,7 +102,7 @@ describe('ProductsController', () => {
       const error = new Error('Database connection failed');
       mockProductsQueryService.findAll.mockRejectedValue(error);
 
-      const result = controller.findAll();
+      const result = controller.findAll(mockPageOptions);
 
       await expect(result).rejects.toThrow(error);
       expect(mockProductsQueryService.findAll).toHaveBeenCalled();

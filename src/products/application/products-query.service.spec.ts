@@ -5,6 +5,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Product } from '../domain/product';
 import { createMockProduct } from '../testing/product-builder';
 import { GetProductByIdQuery } from './queries/get-product-by-id.query';
+import { PageOptionsDto } from 'src/common/pagination/offset';
 
 describe('ProductsQueryService', () => {
   let service: ProductsQueryService;
@@ -34,16 +35,30 @@ describe('ProductsQueryService', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of products', async () => {
+    const mockPageOptions = new PageOptionsDto();
+    const mockMeta = {
+      page: 1,
+      take: 10,
+      itemCount: 2,
+      pageCount: 1,
+      hasPreviousPage: false,
+      hasNextPage: false,
+    };
+    it('should return a paginated list of products', async () => {
       const expectedProducts = [
         createMockProduct({ id: '1' }),
         createMockProduct({ id: '2', name: 'Mouse', price: 10 }),
       ];
-      mockProductRepo.findAll.mockResolvedValue(expectedProducts);
+      const expectedPageDto = {
+        data: expectedProducts,
+        meta: mockMeta,
+      };
+      mockProductRepo.findAll.mockResolvedValue(expectedPageDto);
 
-      const result = await service.findAll();
+      const result = await service.findAll(mockPageOptions);
 
-      expect(result).toEqual(expectedProducts);
+      expect(result).toEqual(expectedPageDto);
+      expect(mockProductRepo.findAll).toHaveBeenCalledWith(mockPageOptions);
       expect(mockProductRepo.findAll).toHaveBeenCalledTimes(1);
     });
   });
