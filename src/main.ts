@@ -11,7 +11,7 @@ import { GlobalExceptionFilter } from './common/presentation/filters/global-exce
 
 async function bootstrap() {
   const app = await NestFactory.create(
-    AppModule.register({ driver: 'in-memory' }),
+    AppModule.register({ driver: 'mongoose' }),
     {
       logger: WinstonModule.createLogger(winstonConfig),
     },

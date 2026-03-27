@@ -19,7 +19,10 @@ import { RolesGuard } from './presentation/http/guards/roles.guard';
 
 import { UsersModule } from 'src/users/users.module';
 import { HashingModule } from './infrastructure/hashing/hashing.module';
-
+import { BullModule } from '@nestjs/bullmq';
+import { MailProcessor } from './application/processors/mail.processor';
+import { BullBoardModule } from '@bull-board/nestjs';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 @Global()
 @Module({
   imports: [
@@ -41,12 +44,20 @@ import { HashingModule } from './infrastructure/hashing/hashing.module';
     CaslModule,
     MailModule,
     UsersModule,
+    BullModule.registerQueue({
+      name: 'mail-queue',
+    }),
+    BullBoardModule.forFeature({
+      name: 'mail-queue',
+      adapter: BullMQAdapter,
+    }),
   ],
   controllers: [AuthenticationController],
   providers: [
     AuthenticationService,
     JwtStrategy,
     LocalStrategy,
+    MailProcessor,
     { provide: APP_GUARD, useClass: AccessTokenGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
@@ -56,6 +67,7 @@ import { HashingModule } from './infrastructure/hashing/hashing.module';
     HashingModule,
     CaslModule,
     AuthenticationService,
+    BullModule,
   ],
 })
 export class IamModule {}

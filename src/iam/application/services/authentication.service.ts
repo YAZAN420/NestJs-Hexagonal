@@ -17,11 +17,12 @@ import { User } from 'src/users/domain/user';
 import { HashingPort } from '../ports/hashing.port';
 import { SignUpDto } from 'src/iam/presentation/http/dto/sign-up.dto';
 import { RefreshTokenDto } from 'src/iam/presentation/http/dto/refresh-token.dto';
-import { MailPort } from 'src/shared/mail/application/ports/mail.port';
 import { UsersCommandService } from 'src/users/application/users-command.service';
 import { UsersQueryService } from 'src/users/application/users-query.service';
 import { GetUserByIdQuery } from 'src/users/application/queries/get-user-by-id.query';
 import { GetUserByEmailQuery } from 'src/users/application/queries/get-user-by-email.query';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 @Injectable()
 export class AuthenticationService {
   private readonly otp = new OTP();
@@ -32,7 +33,7 @@ export class AuthenticationService {
     private readonly usersQueryService: UsersQueryService,
     private readonly hashingPort: HashingPort,
     private readonly jwtService: JwtService,
-    private readonly mailPort: MailPort,
+    @InjectQueue('mail-queue') private readonly mailQueue: Queue,
   ) {}
   async signUp(signUp: SignUpDto) {
     const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -46,9 +47,22 @@ export class AuthenticationService {
     newUser.setVerificationToken(verificationToken);
     await this.usersCommandService.save(newUser);
 
-    this.mailPort
-      .sendVerificationEmail(signUp.email, verificationToken)
-      .catch((err) => console.error('Email Dispatch Failed:', err));
+    await this.mailQueue.add(
+      'send-verification-email',
+      {
+        email: signUp.email,
+        token: verificationToken,
+      },
+      {
+        attempts: 5,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: true,
+      },
+    );
+
     return {
       message:
         'Registration successful. Please check your email to verify your account.',
@@ -94,7 +108,7 @@ export class AuthenticationService {
 
     const user = await this.usersQueryService.findByEmail(query);
 
-    if (!user) return null;
+    if (!user) throw new UnauthorizedException();
 
     const isPasswordValid = await this.hashingPort.compare(
       password,
@@ -229,16 +243,30 @@ export class AuthenticationService {
   async forgotPassword(email: string) {
     const query = new GetUserByEmailQuery(email);
     const user = await this.usersQueryService.findByEmail(query);
-    if (!user) return { message: 'Password reset link sent to your email.' };
+    if (!user) throw new UnauthorizedException();
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetExpires = new Date(Date.now() + 3600000);
 
     user.generatePasswordResetToken(resetToken, resetExpires);
     await this.usersCommandService.save(user);
 
-    this.mailPort
-      .sendPasswordResetEmail(user.getEmailValue(), resetToken)
-      .catch((err) => console.error('Email Dispatch Failed:', err));
+    await this.mailQueue.add(
+      'send-password-reset-email',
+      {
+        email: user.getEmailValue(),
+        token: resetToken,
+      },
+      {
+        priority: 1,
+        attempts: 5,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnComplete: true,
+        delay: 60 * 1000,
+      },
+    );
 
     return { message: 'Password reset link sent to your email.' };
   }

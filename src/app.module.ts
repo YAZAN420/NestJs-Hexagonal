@@ -14,8 +14,26 @@ import { HttpCacheInterceptor } from './common/presentation/interceptors/http-ca
 import { CacheModule } from './common/infrastructure/cache/cache.module';
 import { DatabaseModule } from './common/infrastructure/database/database.module';
 import { CachePort } from './common/application/ports/cache.port';
+import { BullModule } from '@nestjs/bullmq';
+import { BullBoardModule } from '@bull-board/nestjs';
+import { ExpressAdapter } from '@bull-board/express';
 @Module({
-  imports: [ChatModule, IamModule, MailModule, CacheModule],
+  imports: [
+    ChatModule,
+    IamModule,
+    MailModule,
+    CacheModule,
+    BullModule.forRoot({
+      connection: {
+        host: 'localhost',
+        port: 6379,
+      },
+    }),
+    BullBoardModule.forRoot({
+      route: '/queues',
+      adapter: ExpressAdapter,
+    }),
+  ],
   providers: [
     UsersQueryService,
     {

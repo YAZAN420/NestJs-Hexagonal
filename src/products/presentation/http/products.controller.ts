@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { PoliciesGuard } from 'src/iam/presentation/http/guards/policies.guard';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -22,6 +23,8 @@ import { ActiveUser } from 'src/iam/presentation/http/decorators/active-user.dec
 import { ProductsCommandService } from 'src/products/application/products-command.service';
 import { ProductsQueryService } from 'src/products/application/products-query.service';
 import { GetProductByIdQuery } from 'src/products/application/queries/get-product-by-id.query';
+import { PageOptionsDto } from 'src/common/pagination/offset';
+import { CursorPageOptionsDto } from 'src/common/pagination/cursor';
 
 @UseGuards(PoliciesGuard)
 @Controller('products')
@@ -55,11 +58,27 @@ export class ProductsController {
   ])
   @Get()
   @CachePublic()
-  async findAll() {
-    const products = await this.productsQueryService.findAll();
+  async findAll(@Query() pageOptionsDto: PageOptionsDto) {
+    const products = await this.productsQueryService.findAll(pageOptionsDto);
     return {
       message: 'Products fetched successfully',
-      data: products,
+      data: products.data,
+      meta: products.meta,
+    };
+  }
+
+  @CheckPolicies([
+    (authPort, user) => authPort.checkPermission(user, Action.Read, Product),
+  ])
+  @Get('cursor')
+  @CachePublic()
+  async findWithCursor(@Query() options: CursorPageOptionsDto) {
+    const result = await this.productsQueryService.findAllCursor(options);
+
+    return {
+      message: 'Products fetched successfully (Cursor)',
+      data: result.data,
+      meta: result.meta,
     };
   }
 
