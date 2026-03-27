@@ -12,6 +12,10 @@ import { GlobalExceptionFilter } from './common/presentation/filters/global-exce
 async function bootstrap() {
   const dbDriver =
     (process.env.DB_TYPE as 'mongoose' | 'in-memory') || 'mongoose';
+  console.log(
+    '🚀 Server is waking up... Reading DB_TYPE:',
+    process.env.DB_TYPE,
+  );
   const app = await NestFactory.create(
     AppModule.register({ driver: dbDriver }),
     {
