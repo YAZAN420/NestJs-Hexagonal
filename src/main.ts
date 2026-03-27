@@ -1,12 +1,17 @@
-console.log('🔥 SERVER IS STARTING - LINE 1 🔥');
+(function () {
+  console.log('=========================================');
+  console.log('🔥 EMERGENCY BOOTSTRAP CHECK 🔥');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('PORT:', process.env.PORT);
+  console.log('DB_TYPE:', process.env.DB_TYPE);
+  console.log('=========================================');
+})();
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import { WinstonModule } from 'nest-winston';
-import { winstonConfig } from './common/infrastructure/logger/winston.config';
 import { ResponseInterceptor } from './common/presentation/interceptors/response.interceptor';
 import { GlobalExceptionFilter } from './common/presentation/filters/global-exception.filter';
 
@@ -21,7 +26,7 @@ async function bootstrap() {
     const app = await NestFactory.create(
       AppModule.register({ driver: dbDriver }),
       {
-        logger: WinstonModule.createLogger(winstonConfig),
+        logger: ['log', 'error', 'warn', 'debug', 'verbose'],
       },
     );
     app.useGlobalFilters(new GlobalExceptionFilter());
