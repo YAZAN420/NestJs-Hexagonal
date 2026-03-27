@@ -28,7 +28,13 @@ import { ExpressAdapter } from '@bull-board/express';
         host: process.env.REDIS_HOST,
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
         password: process.env.REDIS_PASSWORD,
-        tls: process.env.NODE_ENV === 'production' ? {} : undefined,
+        tls: process.env.REDIS_PASSWORD
+          ? { rejectUnauthorized: false }
+          : undefined,
+        maxRetriesPerRequest: null,
+        retryStrategy(times) {
+          return Math.min(times * 50, 2000);
+        },
       },
     }),
     BullBoardModule.forRoot({
