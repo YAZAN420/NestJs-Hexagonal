@@ -1,3 +1,4 @@
+console.log('🔥 SERVER IS STARTING - LINE 1 🔥');
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
