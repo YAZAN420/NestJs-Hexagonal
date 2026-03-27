@@ -10,8 +10,10 @@ import { ResponseInterceptor } from './common/presentation/interceptors/response
 import { GlobalExceptionFilter } from './common/presentation/filters/global-exception.filter';
 
 async function bootstrap() {
+  const dbDriver =
+    (process.env.DB_TYPE as 'mongoose' | 'in-memory') || 'mongoose';
   const app = await NestFactory.create(
-    AppModule.register({ driver: 'in-memory' }),
+    AppModule.register({ driver: dbDriver }),
     {
       logger: WinstonModule.createLogger(winstonConfig),
     },
