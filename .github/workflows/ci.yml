@@ -35,3 +35,21 @@ jobs:
 
       - name: Build Project
         run: npm run build
+deploy:
+  name: Deploy to Back4App
+  needs: build-and-test
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install Back4App CLI
+      run: curl -L https://github.com/back4app/b4a-cli/releases/latest/download/b4a_linux_amd64 -o b4a && chmod +x b4a
+
+    - name: Configure and Deploy
+      env:
+        B4A_ACCOUNT_KEY: ${{ secrets.B4A_ACCOUNT_KEY }}
+        B4A_APP_ID: ${{ secrets.B4A_APP_ID }}
+      run: |
+        ./b4a configure account --key $B4A_ACCOUNT_KEY
+        ./b4a deploy --app $B4A_APP_ID
