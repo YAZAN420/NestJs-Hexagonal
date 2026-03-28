@@ -1,11 +1,3 @@
-(function () {
-  console.log('=========================================');
-  console.log('🔥 EMERGENCY BOOTSTRAP CHECK 🔥');
-  console.log('Timestamp:', new Date().toISOString());
-  console.log('PORT:', process.env.PORT);
-  console.log('DB_TYPE:', process.env.DB_TYPE);
-  console.log('=========================================');
-})();
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -19,10 +11,6 @@ async function bootstrap() {
   try {
     const dbDriver =
       (process.env.DB_TYPE as 'mongoose' | 'in-memory') || 'mongoose';
-    console.log(
-      '🚀 Server is waking up... Reading DB_TYPE:',
-      process.env.DB_TYPE,
-    );
     const app = await NestFactory.create(
       AppModule.register({ driver: dbDriver }),
       {

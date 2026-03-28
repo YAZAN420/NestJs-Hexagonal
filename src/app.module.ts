@@ -32,8 +32,10 @@ import { ExpressAdapter } from '@bull-board/express';
           ? { rejectUnauthorized: false }
           : undefined,
         maxRetriesPerRequest: null,
+        enableReadyCheck: false,
+        keepAlive: 30000,
         retryStrategy(times) {
-          return Math.min(times * 50, 2000);
+          return Math.min(times * 100, 3000);
         },
       },
     }),
