@@ -46,15 +46,20 @@ jobs:
 
       - name: Install Back4App CLI
         run: |
-          DOWNLOAD_URL=$(curl -s https://api.github.com/repos/back4app/b4a-cli/releases/latest \
-            | jq -r '.assets[] | select(.name | contains("linux_amd64")) | .browser_download_url')
+          VERSION="v0.1.2"
+          FILENAME="b4a_${VERSION}_linux_amd64"
+          URL="https://github.com/back4app/b4a-cli/releases/download/${VERSION}/${FILENAME}"
 
-          echo "🔗 Found URL: $DOWNLOAD_URL"
+          echo "🔗 Downloading from: $URL"
 
-          curl -L "$DOWNLOAD_URL" -o b4a
+          curl -L "$URL" -o b4a
+
+          if [ ! -s b4a ]; then 
+            echo "❌ Error: Download failed or file is empty!"; 
+            exit 1; 
+          fi
+
           chmod +x b4a
-
-          if [ ! -s b4a ]; then echo "❌ Download failed!"; exit 1; fi
           echo "✅ CLI installed successfully!"
 
       - name: Configure and Deploy
