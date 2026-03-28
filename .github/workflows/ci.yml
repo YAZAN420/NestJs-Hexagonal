@@ -45,11 +45,17 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Back4App CLI
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download --repo back4app/b4a-cli --pattern "*linux_amd64" --output b4a
+          DOWNLOAD_URL=$(curl -s https://api.github.com/repos/back4app/b4a-cli/releases/latest \
+            | jq -r '.assets[] | select(.name | contains("linux_amd64")) | .browser_download_url')
+
+          echo "🔗 Found URL: $DOWNLOAD_URL"
+
+          curl -L "$DOWNLOAD_URL" -o b4a
           chmod +x b4a
+
+          if [ ! -s b4a ]; then echo "❌ Download failed!"; exit 1; fi
+          echo "✅ CLI installed successfully!"
 
       - name: Configure and Deploy
         env:
